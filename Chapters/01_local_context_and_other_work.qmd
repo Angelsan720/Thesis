@@ -1,0 +1,139 @@
+---
+title: "Local context and other work"
+format:
+  pdf:
+    fig-width: 8
+    fig-height: 4
+bibliography: references.bib
+---
+
+# The external players
+Now let us focus on the work done by a few entities of note: The International Database (IDB) of the US Census Bureau, The United Nations World Population Prospects (WPP) and the University of Washington and the Institute for Health Metrics and Evaluation (IHME).
+
+Starting with the US Census Bureau, they provide vital statitical information for not only the 50 states, but also for Puerto Rico and the rest of the US territories. For estimates for the island, they recommend using the official US estimates they provide, but for future facing projections they recommend using the International Database (IDB) projections. The IDB provides estimates and projections for 237 countries and areas, including Puerto Rico, with a focus on demographic components such as fertility, mortality, and migration. The IDB projections are widely used by researchers, policymakers, and international organizations for demographic analysis and planning purposes[@USCensusQuickFacts].
+
+They employ the cohort-component method to produce population projections in the IDB. This approach tracks distinct cohorts of people grouped by single years of age and sex forward through time, applying age-specific and sex-specific rates of mortality, fertility, and net migration each year. Starting from a base year population broken down by age and sex, the method subtracts deaths (based on projected mortality schedules), adds births (calculated from projected fertility rates applied to women of childbearing age), and adjusts for net international migration at each age. The process repeats annually to generate detailed projected populations by age and sex through 2100.
+
+For mortality assumptions, the Census Bureau generally anticipates continued declines in most countries due to improvements in healthcare and economic development, modeling future life expectancy at birth (e0) using a fixed-slope logistic (S-shaped) curve fitted to recent trends, with results validated against country-specific conditions and correlates like immunization coverage. Age patterns of mortality are then derived through logarithmic interpolation between recent observed rates and an ultimate low-mortality standard. Exceptions are made for countries significantly affected by AIDS, where specialized methodology incorporates the epidemic's impact on future mortality and population size[@idb2020methodology].
+
+Moving on to the United Nations, for our needs, the Department of Economic and Social Affairs (UN DESA) Population Division, produces the World Population Prospects (WPP)[@UNWPP2024], which they intend to serves as the global benchmark for demographic data and future trends. A central component of this work involves creating comprehensive mortality projections that track life expectancy and survival rates across 237 countries and areas. These projections are vital for international policy-making, as they allow governments and organizations to prepare for demographic shifts such as population aging and changes in dependency ratios [@department2024world].
+
+The methodology behind these projections has evolved significantly, moving from traditional deterministic models to a more advanced probabilistic framework. Currently, the UN utilizes a cohort-component method integrated with a Bayesian hierarchical model to project mortality. The model applies a double-logistic function to simulate the pace of improvement based on historical gains and assumes a gradual deceleration as life expectancy rises. Male life expectancy is derived by projecting the sex gap modeled as an autoregressive process linked to female levels and subtracting it from the projected female values. The approach incorporates adjustments for countries significantly affected by AIDS, COVID-19, and other mortality crises, and uses model life tables to translate life expectancy trends into age-specific and sex-specific mortality rates. This probabilistic system generates thousands of trajectories to quantify uncertainty, with the median trajectory forming the medium mortality scenario used in population projections.[@wpp2022methodology].
+
+Finishing now with the University of Washington, hey have established itself as a global powerhouse for demographic forecasting, primarily through the dual efforts of the Institute for Health Metrics and Evaluation (IHME)[@IHME_Main] and the Department of Statistics. Their comprehensive research framework involves modeling all-cause and cause-specific mortality across hundreds of countries to provide a roadmap for future public health challenges [@foreman2018forecasting]. While the IHME often focuses on scenario-based forecasting to evaluate the potential impact of policy interventions [@faso2019institute], the statistical framework pioneered by Professor Adrian Raftery provides the mathematical rigor necessary for understanding the uncertainty inherent in these long-term trends [@raftery2013bayesian].
+
+Professor Raftery’s work revolutionized the field by moving demography beyond deterministic best-guess estimates toward Bayesian hierarchical models that quantify the probability of various outcomes. This methodology has become the international gold standard, serving as the primary engine for the United Nations official world population reports [@raftery2013bayesian]. A key innovation in his approach is the ability to project male and female life expectancy jointly, ensuring that the historical correlation between genders is preserved in future models [@raftery2014joint].
+
+In recent years, the scope of this work has expanded to address both local disparities and the biological limits of the human species. Raftery has pushed the boundaries of mortality research into subnational forecasting, allowing for high-resolution life expectancy projections at the county or district level [@vsevvcikova2021probabilistic]. Furthermore, his research into "supercentenarians" suggests that the maximum human lifespan is likely to continue breaking records throughout the 21st century [@pearce2021probabilistic]. Collectively, these mortality insights feed into broader models that challenge previous assumptions about global demographic shifts, suggesting that the world population is less likely to stabilize than once thought [@gerland2014world].
+
+Moving on to their methodology, The University of Washington employs a multi-component model developed by Kyle Foreman and colleagues[@foreman2018forecasting] and extended to 2100. This model incorporates three key elements: first, an underlying mortality component based on the Socio-demographic Index (SDI), time, and cause-specific covariates; second, a risk factor scalar that captures the combined effects of various risks, using the Global Burden of Disease[@GBD2021Results] cause-risk hierarchy and accounting for risk factor mediation; and third, an ARIMA model to address unexplained residual mortality. To enhance long-range forecasting stability, the model replaces the spline on SDI with a random walk featuring attenuated drift within the ARIMA framework, improving out-of-sample predictive validity and enabling robust projections of age-specific mortality trends through the end of the century.
+
+
+# The Historical Context and Current Metrics
+Over the past century, Puerto Rico has gone through a major demographic transition characterized by declining fertility and mortality rates, leading to significant changes in its population structure. In the early 20th century, Puerto Rico experienced high birth and death rates typical of pre-industrial societies. However, with improvements in healthcare, sanitation, living standards and considerable changes in vital statistics registration, the island saw a dramatic reduction in mortality rates, particularly infant mortality, by the mid-20th century. This decline was accompanied by a sharp drop in fertility rates, driven by increased access to education, family planning services, and shifts in societal norms regarding family size. As a result, Puerto Rico's population growth rate slowed significantly by the end of the 20th century and gone into the negatives in recent decades. The main driver of this being out migration to the mainland, particularly among younger cohorts seeking better economic opportunities elsewhere, which has further influenced its demographic profile.
+
+The data we will be using for the mortality analysis comes from multiple sources. The population estimates come from the US Census Bureau decennial censuses divided into age groups and sex and interpolated for the intercensal years using a linear spline. The mortality data is a collage of multiple sources (state health department, WHO database and the Department of Health, Education, and Welfare (HEW) now Department of Health and Human Services (HHS)). For clarities sake, we will present the data in by type (population and mortality) age group (children: ages 0-19, Seniors: ages 65+, with the inbetween being Adults). Seeing all this, we have the two following visualizations: 
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+library(tidyverse)
+library(rio)
+population <- bind_rows( 
+    rio::import("../data/poblacion_hombres.csv")   |> pivot_longer(  cols = -year, names_to = "Ages", values_to = "Count") |> mutate(year = as.integer(year)) |> mutate(sex="male"  ) |> mutate(Ages=as.integer(Ages)),
+    rio::import("../data/poblacion_mujeres.csv")   |> pivot_longer(  cols = -year, names_to = "Ages", values_to = "Count") |> mutate(year = as.integer(year)) |> mutate(sex="female") |> mutate(Ages=as.integer(Ages))
+    ) |> mutate(Children = Ages < 20) |> mutate(Seniors = Ages > 60) |> mutate(Adults = !Children & !Seniors) |> mutate(Age_group = case_when(Children ~ "Children", Adults ~ "Adults", Seniors ~ "Seniors")) |> select(-c(Children, Adults, Seniors)) |> filter(year <= 2030)
+population |> ggplot() +
+    geom_line(aes(x=year, y=Count, color=Age_group, group = Ages)) +
+    facet_wrap(~sex) +
+    theme_bw() +
+    xlim(1950,2023) +
+    labs(title="Population in Puerto Rico by Age Group and Sex: 1950 to 2023",
+         x="Year", y="Polulation" ) +
+    theme(legend.direction ="horizontal",legend.position = "bottom") + 
+    labs(color='Age Group') # Reorder legend
+
+
+```
+With this we see the very clearly that both populations track each other very similarly. We see meteoric fall of the child population mainly due to the fall of the Total Fertility Rate to 0.9 in 2021, far below replacement levels[@rosario2024bayesian]. We also see the consistent rise of the senior population thanks to the natural aging of the population. Finally, we see the adult population beginning to have a similar crash as the child population ages into adulthood and the senior population ages out of adulthood or exits the population mainly due to out-migration[@matos2022migration].
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+deaths <- bind_rows( 
+    rio::import("../data/defunciones_hombres.csv") |> select(-desconocido) |>pivot_longer(  cols = -year, names_to = "Ages", values_to = "Deaths") |> mutate(year = as.integer(year))|> mutate(sex="male"  ) |> mutate(Ages=as.integer(Ages)),
+    rio::import("../data/defunciones_mujeres.csv") |> select(-desconocido) |>pivot_longer(  cols = -year, names_to = "Ages", values_to = "Deaths") |> mutate(year = as.integer(year))|> mutate(sex="female") |> mutate(Ages=as.integer(Ages))
+)|> mutate(Children = Ages < 20) |> mutate(Seniors = Ages > 60) |> mutate(Adults = !Children & !Seniors) |> mutate(Age_group = case_when(Children ~ "Children", Adults ~ "Adults", Seniors ~ "Seniors")) |> select(-c(Children, Adults, Seniors))
+
+data <- left_join(deaths |> select(Deaths, year, sex, Ages), population |> select(Count, year, sex,Ages), by=join_by(year,sex, Ages))|> mutate(Children = Ages < 20) |> mutate(Seniors = Ages > 60) |> mutate(Adults = !Children & !Seniors) |> mutate(Age_group = case_when(Children ~ "Children", Adults ~ "Adults", Seniors ~ "Seniors")) |> select(-c(Children, Adults, Seniors))
+    
+data |> ggplot() +
+    geom_line(aes(x=year, y=log(Deaths/Count), color=Age_group, group = Ages)) +
+    facet_wrap(~sex) +
+    theme_bw() +
+    xlim(1950,2023) +
+    labs(title="Log death rates in Puerto Rico by Age Group and Sex: 1950 to 2023", 
+         x="Year",
+         y="Log deaths"
+    ) +
+    theme(legend.direction ="horizontal",legend.position = "bottom") + 
+    labs(color='Age Group') # Reorder legend
+```
+Now, if we look at the log death rates, we can see the decline in mortality rates for all age groups. The child population has seen the most significant decline in mortality rates, which is consistent with the improvements in healthcare and sanitation that have occurred in Puerto Rico over the past few decades. The adult population has also seen a decline in mortality rates, although it is not as pronounced as the child population. Finally, the senior population has seen a decline in mortality rates as well. Of note is the increase in mortality in the middle of the 1990s, which is likely due to the AIDS epidemic that hit the island hard during that period[@calzada_sida_nodate]. This increase is consistent between both sexes and all age groups, but it is more pronounced in the young adult population, and much more pronounced in the male population. Also of note in that the male population never recovers the same rate of decline in mortality rates as the female population after the AIDS epidemic and has stagnated since then. The source of this stagnation is likely violent crime but its outside the scope of this study. 
+
+# Projections by the US Census Bureau, the United Nations and the University of Washington
+
+Now, lets see what the three entities we have discussed say about the future of mortality in Puerto Rico. Fortunately, all three provide their projections for the island online through web tools or software packages. The US Census Bureau provides its projections through the International Database (IDB) online tool, the United Nations provides its projections through the World Population Prospects (WPP) and we obtained it through the R package for the 2024 release, and the University of Washington provides its projections through the Institute for Health Metrics and Evaluation (IHME) online tool, which requires an account to access.
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+entity_data <- rio::import("../data/entities_e0.csv")
+entity_data |> ggplot(aes(x = year, y = ex, group = source, color = source, fill = source)) +
+    geom_line(linewidth = 1) +
+    facet_wrap(~sex, scales="free_x") +
+    labs(
+        title="Central Tendencies of Life Expectancy Projections for Puerto Rico by the\nUS Census Bureau, the United Nations and the University of Washington: 2020 to 2100",
+        x = "Year",
+        y = "Life Expectancy",
+        color = "Source",
+        fill = "Source"
+    )+
+    scale_y_continuous(breaks = seq(0, 120, by = 5)) +
+    theme_bw() +
+    theme(legend.position = "bottom",axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
+    xlim(2022,2100)+
+    ylim(75,97.5)
+```
+Looking at the projections, we can see that all three entities reach a general concensus that life expectancy in Puerto Rico will continue to increase over the next few decades. They differ on the rate of increase with the University of Washington projection starting to plateau but the projection stops before the plateau is reached, while the US Census Bureau and the United Nations projections continue to increase at a steady rate clear into the 2100s. These two differ slightly in behavior as the UN projection behaves more linearly and the Census Bureau projection behaves more like a logistic curve (ie larger slope at the beginning). By the end of the projection period at 2100 the US Census Bureau projection reaches a life expectancy of 95 years for women with the UN trailing slightly at about 94. The data obtained for the GBD using their online tool  cuts off the projection at 2050 but life expectancy for women reaches 87 years. As expected, men trail women in all projections, the IDB suggests that men will reach a life expectancy of 90 years by 2100 with the UN trailing slightly at about 88 years and the GBD projection reaches a life expectancy of 81 years for men by 2050. One final note of the analisys of the central tendencies, for the GBDs end date of 2050, its projected life expectancy for both men and women falls below both the US Census Bureau and the UN projections. For women it starts tracking the UN projection before diverging. For men it always falls below the UN projection.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+entity_data <- rio::import("../data/entities_e0.csv")
+entity_data |> ggplot(aes(x = year, y = ex, group = source, color = source, fill = source)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +
+    geom_line(linewidth = 1) +
+    facet_grid(
+        sex ~ source,
+        scales = "free_y",
+        space  = "free_y") +
+    scale_y_continuous(breaks = seq(0, 120, by = 5)) +
+    labs(
+        title="Confidence Intervals of Life Expectancy Projections for Puerto Rico by the\nUS Census Bureau, the United Nations and the University of Washington: 2020 to 2100",
+        x = "Year",
+        y = "Life Expectancy",
+        color = "Source",
+        fill = "Source"
+  ) +
+  theme_bw() +
+  theme(legend.position = "bottom",axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
+    xlim(2022,2100)
+```
+
+Now, if we start looking at the confidence intervals, The first thing we can take note is that the US census Bureau projection does not provide confidence intervals at all. This is due to the nature of their projection method. Meanwhile, the UN projection provides confidence intervals that slowly fan out over time, with a range of 101 to 86 years for women and 96 to 79 years for men. The GBD projection provides confidence intervals that are much narrower than the UN projection, with a range of 89 to 85 years for women and 83 to 78 years for men. The nature of the interval also differs. Instead of a gradual fanning out, the GBD projection provides a more constant width interval that is centered around the central tendency. The range of the interval is also much narrower than the UN projection, which suggests that the GBD projection is more confident its estimates with a range of 4 and 5 years for women and men respectively, while the UN projection has a range of 8 and 10 years respectively.
+
+# References
