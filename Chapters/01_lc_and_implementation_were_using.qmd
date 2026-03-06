@@ -47,8 +47,6 @@ Starting off with the input matrix, this is the matrix of log age specific death
 
 We then pass this matrix to the stMoMo package to fit the Lee-Carter model and extract the parameters.
 
-\newpage
-
 # The initial fit
 ## Fitted ax
 
@@ -57,7 +55,6 @@ Once the initial model fitting is completed, we have all our initial products. T
 ![](../graphs/01_ax.png){fig-align="center"}
 
 Here, we can see the drastic fall of the baseline log mortality after the first year of life. This is followed by the steady increase as one ages and the telltale male mortality hump starting at the teen years followed by a slow closing of the gap between the sexes as they age.
-\newpage
 
 ## Fitted bx
 
@@ -67,7 +64,6 @@ Next we have the bx parameter, which is our age specific sensitivity to changes 
 
 Here we can see the sensitivity of the mortality index to changes in mortality. The highest sensitivity is at early life. This is due to the monumental work done on the island in the latter half of the 20th century, better sanitation, better nutrition, and better healthcare. The high point is followed by an significant drop for both sexes at the teen years. Women then transition to a steady decline in sensitivity but males continue to drop until near zero at the age of 20 finally making a slow climb through to meet the female sensitivity at around 80 years of age. This is a clear example of the context specific nature of the bx parameter, as the sensitivity of mortality to changes in the overall trend is not uniform across age groups and can be influenced by various factors such as healthcare improvements, lifestyle changes, and social determinants of health that affect different age groups differently. We will specifficaly se the effect of the parameter in the death rates and life expectancy projections later on, but for now we can move on to the kt parameter, which is our time-varying mortality index.
 
-\newpage
 
 ## Fitted kt
 
@@ -109,7 +105,6 @@ knitr::kable(
 
 Here we have the ax residuals of the bootstrap. It presents a large deviance spike around childhood. For males this tapers quickly when entering the teen years and continues to narrow through adulthood and the senior years. Women on the other hand present a slower narrowing into adulthood and further slows down past the 40 year mark. Looking at the quantiles, at the median there's a clear skew towards opposite sides of zero between the sexes and the range between the 95% quantiles between men and woman are withing 20% of each other. In short both share the same general shape of uncertainty with the males having a slight offset towards the negative. This finally leads to males having a lower baseline level of log mortality than females
 
-\newpage
 
 ## bx residuals
 
@@ -138,7 +133,6 @@ knitr::kable(
 
 Moving on to the bx parameters bootstrap residuals, in many ways it mirrors the ones from the ax parameter, with a large deviance spike around childhood that tapers off as age progresses. However, unlike the ax residuials, we see a clear difference in the range of the residuals between sexes. For males, the residuals are much more spread out than the female counterpart, with the 95% range ratio being ranging between 0.50 and 0.94, meaning that the male sensitivity to changes in the mortality index is much more volatile than the female sensitivity.
 
-\newpage
 
 ## kt residuals
 
@@ -169,6 +163,7 @@ Moving on to the residuals for the kt variable, we see that unlike both other pa
 
 
 \newpage
+
 # The forecast
 
 Now, that we have the bootstrap parameters, we can now do the simulations. The simulations are done by taking the bootstrapped parameters and simulating the kt variable forward in time. This allows us to create a distribution of possible future mortality scenarios based on the uncertainty in the parameters. The results of the simulations can be used to create confidence intervals for the future mortality rates.
