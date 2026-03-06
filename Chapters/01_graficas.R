@@ -4,7 +4,8 @@ library(demography)
 library(zoo)
 library(glue)
 library(ggfan)
-
+fig_width <- 8
+fig_height <- 4
 get_demo_data <- function(df){
     years <- df |> select(year) |> distinct() |> pull(year) |> as.numeric() |> sort()
     ages <- df |> select(age) |> distinct() |> pull(age) |> as.numeric() |> sort()
@@ -345,12 +346,12 @@ bx_female <- mx_female$LCFit$bx
 kt_female <- mx_female$LCFit$kt
 
 plt <- plot_residuals(residuals_male, residuals_female)
-ggsave("graphs/01_residuals.png",plot = plt, width=10, height=6)
+ggsave("graphs/01_residuals.png",plot = plt, width=fig_width, height=fig_height)
 
 plts <- plot_params(ax_male, bx_male, kt_male,ax_female, bx_female, kt_female)
-ggsave("graphs/01_ax.png",plot = plts$ax_plot, width=10, height=6)
-ggsave("graphs/01_bx.png",plot = plts$bx_plot, width=10, height=6)
-ggsave("graphs/01_kt.png",plot = plts$kt_plot, width=10, height=6)
+ggsave("graphs/01_ax.png",plot = plts$ax_plot, width=fig_width, height=fig_height)
+ggsave("graphs/01_bx.png",plot = plts$bx_plot, width=fig_width, height=fig_height)
+ggsave("graphs/01_kt.png",plot = plts$kt_plot, width=fig_width, height=fig_height)
 
 boot_male   <- mx_male$LCFitBoot
 boot_female <- mx_female$LCFitBoot
@@ -496,9 +497,9 @@ get_quantiles <- function(sequence, quantiles=c(0.025,0.5, 0.975)){
 }
 plts<-plot_boot_params(boot_male, boot_female)
 
-ggsave("graphs/01_boot_ax.png",plot = plts$boot_ax_plot, width=10, height=6)
-ggsave("graphs/01_boot_bx.png",plot = plts$boot_bx_plot, width=10, height=6)
-ggsave("graphs/01_boot_kt.png",plot = plts$boot_kt_plot, width=10, height=6)
+ggsave("graphs/01_boot_ax.png",plot = plts$boot_ax_plot, width=fig_width, height=fig_height)
+ggsave("graphs/01_boot_bx.png",plot = plts$boot_bx_plot, width=fig_width, height=fig_height)
+ggsave("graphs/01_boot_kt.png",plot = plts$boot_kt_plot, width=fig_width, height=fig_height)
 
 rio::export(plts$quantiles$kt, "graphs/01_boot_residuals_kt.csv","csv")
 rio::export(plts$quantiles$bx, "graphs/01_boot_residuals_bx.csv","csv")
@@ -546,7 +547,7 @@ plt_sim_kt <- sim_kt |> ggplot(aes(x=year)) +
     scale_color_manual(values = c("male" = "blue", "female"="red"))+
     theme_bw() +
     labs(title="Simulated kt by sex 2022-2072", x="Year", y="Kt")
-ggsave("graphs/01_simulated_kt.png",plot = plt_sim_kt, width=10, height=6)
+ggsave("graphs/01_simulated_kt.png",plot = plt_sim_kt, width=fig_width, height=fig_height)
 #rio::export(df, "graphs/01_life expted_kt.csv","csv")
 df <- bind_rows(mx_male$mx |> mutate(sex="male"),mx_female$mx |> mutate(sex="female"))
 
