@@ -319,7 +319,7 @@ nBoot <- 50
 type="residual"
 deathType="observed"
 nsim <- 50
-h<- 50
+h<- 40
 jumpchoice="actual"
 data$Source <- get_demo_data(tmp)
 n100 <- 100
@@ -460,17 +460,17 @@ plot_boot_params <- function(male_boot,female_boot, nBoots=nBoot){
         geom_point() +
         theme_bw() +
         facet_wrap(~sex, ncol=1)+
-        labs(title="Bootstrap ax", x="Age", y="Ax")
+        labs(title="Bootstrap residuals for ax", x="Age", y="Ax")
     plt5 <- ggplot(df, aes(x=as.factor(age), y=delta_bx)) +
         geom_point() +
         theme_bw() +
         facet_wrap(~sex, ncol=1)+
-        labs(title="Bootstrap bx", x="Age", y="Bx")
+        labs(title="Bootstrap residuals for bx", x="Age", y="Bx")
     plt6 <- ggplot(kt, aes(x=year, y=delta_kt)) +
         geom_point() +
         theme_bw() +
         facet_wrap(~sex, ncol=1)+
-        labs(title="Bootstrap kt", x="year", y="kt")
+        labs(title="Bootstrap residuals for kt", x="year", y="kt")
     ###################### delta scatter plot
     ax_quantiles <- df |> group_by(age, sex) |> summarise(
         q_0025 = quantile(delta_ax, probs=0.025),
