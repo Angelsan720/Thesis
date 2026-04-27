@@ -1,5 +1,5 @@
 ---
-title: "The model were using and what it tells us"
+title: "The model we're using and what it tells us"
 format:
   pdf:
     fig-width: 8
@@ -224,7 +224,7 @@ knitr::kable(
 
 deathrates|>
 
-        mutate(age_group = if_else( age<20, "minors",if_else(age>60, "seniors","adult"))
+        mutate(age_group = if_else( age<20, "Children",if_else(age>60, "Elderly","Adults"))
                ) |>
         mutate(age = as.factor(age))|>
         mutate(central = log(central)) |>
@@ -235,7 +235,8 @@ deathrates|>
     labs(title = "Projected log mortality rates by age group and sex",
          x = "Year",
          y = "Log Mortality Rate") +
-    theme_bw()
+    theme_bw() +
+    theme(legend.text = element_text(), legend.position = "bottom")
 #
 #
 ```
@@ -284,4 +285,7 @@ Seeing the life expectancy at birth projections, we see that the historic data s
 
 \newpage
 
-# References
+### References
+
+::: {#refs}
+:::

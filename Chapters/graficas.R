@@ -1,9 +1,7 @@
 library(tidyverse)
 library(StMoMo)
 library(demography)
-library(zoo)
 library(glue)
-library(ggfan)
 fig_width <- 8
 fig_height <- 4
 get_demo_data <- function(df){
@@ -316,15 +314,15 @@ const <- "sum"
 link <- "log"
 kt.method <-"mrwd" 
 kt.lookback = NULL
-nBoot <- 50
+nBoot <- 500
 type="residual"
 deathType="observed"
-nsim <- 50
+nsim <- 500
 h<- 40
 jumpchoice="actual"
 data$Source <- get_demo_data(tmp)
-n100 <- 100
-n1000 <- 1000
+#n100 <- 100
+#n1000 <- 1000
 mx_female            <- func(data=data$Source$female |> StMoMoData(), link=link, const=const, nBoot=nBoot,    type=type, deathType=deathType, nsim=nsim, h=h, jumpchoice=jumpchoice, kt.method=kt.method, kt.lookback=kt.lookback)
 mx_male              <- func(data=data$Source$male   |> StMoMoData(), link=link, const=const, nBoot=nBoot,    type=type, deathType=deathType, nsim=nsim, h=h, jumpchoice=jumpchoice, kt.method=kt.method, kt.lookback=kt.lookback)
 #mx_boot_00100_female <- func(data=data$Source$female |> StMoMoData(), link=link, const=const, nBoot=n100,     type=type, deathType=deathType, nsim=n100, h=h, jumpchoice=jumpchoice, kt.method=kt.method, kt.lookback=kt.lookback)
@@ -568,9 +566,133 @@ compute_lt2 <- function(rates){
 df<- df |> group_by(sex) |> group_modify(~ compute_lt2(.x))
 rio::export(df, "graphs/01_lifetables.csv","csv")
 
+entities <- rio::import("data/entities_e0.csv") |> mutate(sex=tolower(sex)) |> rename(age=x, central=ex)|> pivot_longer(
+    names_to = "type",
+    cols = -c(year, sex, age, source),
+    values_to = "ex")
+
+df2 <- df |> mutate(source="Our Projections")|> select(c("year","age","sex","source","type","ex")) 
+
+entities <- bind_rows(df2, entities)|> 
+    pivot_wider(
+        names_from=type,
+        values_from=ex
+    )
 
 
+compare_plot <- ggplot() +
+    geom_ribbon( data=entities |> filter(age==0) |> filter(source=="Our Projections"), aes(x = year, ymax=upper, ymin =lower,color=source, fill = "grey90"))   +
+    geom_ribbon( data=entities |> filter(age==0) |> filter(source=="WPP"),             aes(x = year, ymax=upper, ymin =lower,color=source, fill = "grey90"))   +
+    geom_ribbon( data=entities |> filter(age==0) |> filter(source=="GBD"),             aes(x = year, ymax=upper, ymin =lower,color=source, fill = "grey90"))   +
+    geom_line(   data=entities |> filter(age==0) |> filter(source=="Our Projections")|> filter(type!="historic"), aes(x = year, y = central,color=source))     +
+    geom_line(   data=entities |> filter(age==0) |> filter(source=="IDB"),                                        aes(x = year, y = central,color=source))     +
+    geom_line(   data=entities |> filter(age==0) |> filter(source=="WPP"),                                        aes(x = year, y = central,color=source))     +
+    geom_line(   data=entities |> filter(age==0) |> filter(source=="GBD"),                                        aes(x = year, y = central,color=source))     +
+    geom_point(  data=entities |> filter(year%%10==0) |> filter(age==0) |> filter(source=="Our Projections"),                            aes(x = year, y = central,shape=source))     +
+    geom_point(  data=entities |> filter(year%%10==0) |> filter(age==0) |> filter(source=="IDB"),                                        aes(x = year, y = central,shape=source))     +
+    geom_point(  data=entities |> filter(year%%10==0) |> filter(age==0) |> filter(source=="WPP"),                                        aes(x = year, y = central,shape=source))     +
+    geom_point(  data=entities |> filter(year%%10==0) |> filter(age==0) |> filter(source=="GBD"),                                        aes(x = year, y = central,shape=source))     +
+    facet_wrap(~sex) +
+    scale_color_manual(values = c("Our Projections" = "blue", "WPP" = "red", "IDB" = "green", "GBD" = "yellow", "historic" = "black"))+
+    scale_fill_manual( values = c("grey90" = "#aaaaaa66"))+
+    xlim(2020, 2070) +
+    theme_bw() +
+    theme(legend.position = "bottom")+
+    guides(
+        fill  = "none",
+        color = guide_legend(override.aes = list(fill = NA, linetype = 0, linewidth = 1)),
+        shape = guide_legend(override.aes = list(colour = c("yellow", "green", "blue", "red"), linewidth = 1))
+    )
+    
+ggsave("graphs/02_compare.png",plot = compare_plot, width=fig_width, height=fig_height)
+rio::export(entities, "graphs/02_comparison_data.csv","csv")
+
+femproj <- entities |> filter(sex=="female") |> filter(age==0) |> filter(source=="Our Projections") |> filter(type!="historic") |> filter(is.na(central)==FALSE)
+femwpp  <- entities |> filter(sex=="female") |> filter(age==0) |> filter(source=="WPP") 
+
+points_from_slope <- function(x_start, y_start, slope, n = 10, step = 1) {
+    x <- x_start + (0:(n - 1)) * step
+    y <- y_start + slope * (x - x_start)
+    data.frame(x = x, y = y)
+}
+points_proj_2 <- points_from_slope(min(femproj$year), min(femproj$central), slope = 0.25, n = length(femproj$central), step = 1)
+points_proj_25 <- points_from_slope(min(femproj$year), min(femproj$central), slope = 0.2, n = length(femproj$central), step = 1)
+
+mediancompareupperbound<- ggplot() +
+    geom_line(  data=femproj, aes(x = year, y = central,color=source)) +
+    geom_line(  data=femwpp,  aes(x = year, y = upper,  color=source)) +
+    geom_line(  data=points_proj_25,  aes(x=x,y=y,color="Our Projections"), linetype="dashed") +
+    geom_line(  data=points_proj_2,  aes(x=x,y=y,color="Our Projections"), linetype="dashed") +
+    geom_point( data=femproj|> filter(year%%10==0), aes(x = year, y = central,shape=source)) +
+    geom_point( data=femwpp|> filter(year%%10==0),  aes(x = year, y = upper,  shape=source))+    
+
+    scale_color_manual(values = c("Our Projections" = "blue", "WPP" = "red"))+
+    scale_fill_manual( values = c("grey90" = "#aaaaaa66"))+
+    xlim(2020, 2070) +
+    theme_bw() +
+    theme(legend.position = "bottom")+
+    guides(
+        fill  = "none",
+        color = guide_legend(override.aes = list(fill = NA, linetype = 0, linewidth = 1)),
+        shape = guide_legend(override.aes = list(colour = c("blue", "red"), linewidth = 1))
+    ) +
+    labs(
+        title="Comparison of our projections with WPP upper bound and projection median with theoretical limit slopes"
+    )
+
+ggsave("graphs/02_mediancompare.png",plot = mediancompareupperbound, width=fig_width, height=fig_height)
+
+points_proj_5 <- points_from_slope(min(femproj$year), min(femproj$central), slope = 0.5, n = length(femproj$central), step = 1)
+
+upperboundcompare<-ggplot() +
+    geom_line(  data=femproj, aes(x = year, y = upper,  color=source)) +
+    geom_line(  data=points_proj_5,  aes(x=x,y=y,color="Our Projections"), linetype="dashed") +
+    geom_point( data=femproj|> filter(year%%10==0), aes(x = year, y = upper,shape=source)) +
+
+    scale_color_manual(values = c("Our Projections" = "blue"))+
+    scale_fill_manual( values = c("grey90" = "#aaaaaa66"))+
+    xlim(2020, 2070) +
+    theme_bw() +
+    theme(legend.position = "bottom")+
+    guides(
+        fill  = "none",
+        color = guide_legend(override.aes = list(fill = NA, linetype = 0, linewidth = 1)),
+        shape = guide_legend(override.aes = list(colour = c("blue"), linewidth = 1))
+    ) +
+    labs(
+        title="Upperbound projection with comparison slope of 5 years per decade"
+    )
+
+ggsave("graphs/02_upperboundcompare.png",plot = upperboundcompare, width=fig_width, height=fig_height)
 
 
-
-
+bounds_df <- rio::import("graphs/lt_final_100_remap.csv") 
+plt <- ggplot(bounds_df|> filter(sex=="male"), aes(x=as.factor(year), y=Freq)) +
+    geom_col() +
+    facet_wrap(~type, ncol=2) +
+    theme_bw() +
+    labs(
+        title="Presence of a particular year in the bounds for males"
+     )+
+    theme(
+        axis.text.x = element_text(
+            angle = 60,
+            hjust = 0.5,
+            vjust = 0.5
+        ))
+ggsave("graphs/02_bounds_presence_male.png",plot = plt, width=fig_width, height=fig_height)
+plt <- ggplot(bounds_df|> filter(sex=="female"), aes(x=as.factor(year), y=Freq)) +
+    geom_col() +
+    facet_wrap(~type, ncol=2) +
+    theme_bw() +
+    labs(
+        title="Presence of a particular year in the bounds for females"
+    )+
+    theme(
+        axis.text.x = element_text(
+            angle = 60,
+            hjust = 0.5,
+            vjust = 0.5
+        ))
+    
+ggsave("graphs/02_bounds_presence_female.png",plot = plt, width=fig_width, height=fig_height)
