@@ -52,5 +52,6 @@ po/*~
 rsconnect/
 .quarto/
 
+# no upload temporary files
+*.zip
 tmp.R
-data/

@@ -1,0 +1,321 @@
+---
+title: "Bosquejo"
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: true
+---
+
+# Introducción
+
+## Problema
+
+1.  Falta de proyecciones de mortalidad robustas para Puerto Rico.
+
+2.  Es importante tener proyecciones actualizadas. El censo tiene proyecciones hasta el 2016.
+
+## Justificación
+
+1.  Primer intento en proyectar la mortalidad de PR con un método robusto
+
+2.  Aplica LC, un modelo conocido por su habilidad de capturar tendencias a largo plazo y tomar en consideración incertidumbre
+
+3.  Las proyecciones proveen una alternativa a las proyecciones del censo y wpp
+
+4.  Proveen información para el pronostico de población e informar decisiones a largo plazo
+
+5.  Se esta usando un periodo de tiempo robusto.
+
+6.  Incluir limitaciones de las proyecciones deterministicas.
+
+## Propósito
+
+## Objetivo principal
+
+1.  Proveer proyecciones de mortalidad con un margen de error
+    1.  proveer proyecciones de mortalidad para el periodo
+    2.  Comparar las mismas con el censo y wpp
+    3.  llenar el vació en la literatura 4 proveer proyecciones de mortalidad probabilistas de edad y sexo para el periodo
+
+# Revisión de literatura
+
+## Lee Cárter
+
+```         
+    1.  Origen y utilización para proyectar la mortalidad de EU
+
+    2.  Modelos contemporáneos
+
+    3.  Cambios, ajustes y mejoras
+    
+```
+
+###Limitaciones
+
+```         
+      1.  Asume que las tasas especificas por edad son constante
+
+      2.  La tendencia lineal del componente de tiempo puede no capturar eventos
+      
+      3.  Puede no capturar eventos generacionales
+      
+      4.  se debería hacer por sexo
+      
+      5.  Es sensitivo a data histórica
+      
+      6.  Extrapola tendencias históricas haciéndolo no confiable a predecir cambios recientes estructurales
+      
+      7.  Sobre estima mortalidad en poblaciones de baja mortalidad.
+```
+
+## Proyecciones del Censo
+
+### Metodología Tradicional
+
+```         
+    1.  El método principal es la proyeccion de cohorte componente
+
+    2.  proyecta la mortalidad futura con ajustando las tendencias recientes a una curva logística. Asume que la esperanza de vida va a mejorar
+
+    3.  Herramientas
+
+        1.  DAPPS
+
+            1.  Rural/Urban Projection (RUP) program
+```
+
+## Naciones Unidas
+
+### Metodología moderna
+
+```         
+  1.  Se proyecta la esperanza de vida femenina con un modelo doble logístico bayesiano que mejora en esperanza de vida basado en tendencias históricas.
+  2.  La esperanza de vida masculina se deriva proyectando un gap entre los sexos utilizando un modelo auto regresivo.
+  3.  Se hacen ajustes especiales para países afectados por sida, crisis recientes y otros eventos
+  4.  Genera 10,000 trayectorias por país.
+```
+
+### Projeciones de universidad de washington
+
+# Metodología
+
+## Objetivos
+
+## Variables
+
+1.  Tasas de mortalidad por edad y sexo
+
+## Lee Cárter
+
+1.  estimacion de parametros
+
+2.  arima
+
+3.  random walk
+
+4.  svd
+
+5.  etc
+
+## StMoMo
+
+### Definición del modelo
+
+```         
+ 1.  Implementa Lee-Carter en un framework GAPC
+
+    2.  Modelo se puede definir con una distribución Poisson o Binomial
+
+    3.  Asegura identificabilidad con los constraints Sum b_x = 1 Sum k_t = 0
+
+2.  Requisito de datos
+
+    1.  Data rectangular edades son las filas, Años son las columnas
+
+        1.  Exposiciones
+
+        2.  Muertes
+
+    2.  Convierte exposiciones centrales a iniciales con aproximaciones
+
+    3.  Permite excluir cohortes con insuficientes datos
+
+3.  Estimación de parámetros
+
+    1.  Maximum likelihood estimation usando el paquete GNM
+
+    2.  Maneja errores de origen Poisson y Binomial con el framework
+
+    3.  Devuelve Ax (effectos de edad),bx (efecto de modulación de edad), kt, log_likelihood, desviación
+
+4.  Metodología de pronostico
+
+    1.  una caminata aleatoria (random walk) con desviación
+
+    2.  Alternativa Modelo arima univariada
+
+    3.  Provecta combinando la funcion estatica de edad (ax) la moduladidad de edad (bx) y las kts pronosticadas
+
+    4.  Provee intervalos de confianza para las proyecciones
+
+5.  Assesoria del Fit
+
+    1.  Computa la desviación de los residuales
+
+    2.  Provee gráficos de ajuste del modelo
+
+    3.  Calcula el aic y bic para comparar modelos
+```
+
+### Proceso de bootstrap para incertidumbre de parámetros
+
+```         
+1.  Bootstrap semiparametrico
+
+    1.  Remuestrea las muertes observadas con una distribución Poisson con media igual a las muertes observadas
+
+    2.  Re ajusta el modelo a los datos remuestreados
+
+    3.  Ajusta por la variabilidad del muestreo Poisson
+
+2.  Bootstrap de residuales
+
+    1.  remuestrea la desviación de los residuales con reemplazo
+
+    2.  Transforma devuelta a muertes con una formula
+
+    3.  Captura la distribución de los errores del modelo
+
+3.  Implementacion
+
+    1.  Bootstrap
+
+        1.  Tipo de bootstrap a usar (semiparametrico o de residuales)
+
+        2.  Numero de remuestreos 5000 \@ 2 horas
+
+        3.  Almacena los resultados de cada remuestreo para replicacion
+
+        4.  Genera intervalos de confianza para los parámetros
+
+    2.  Simulación
+
+        1.  Genera trayectorias que incorporan el error de la serie de tiempo y la incertidumbre del boortstrap
+
+        2.  Genera intervalos mas grande.
+
+        3.  permite comparar prediciones con y sin incertidumbre de parámetros
+```
+
+### Parámetros que estaremos usando
+
+```         
+1.  const = "sum",
+
+2.  link = "log",
+
+3.  kt.method = "mrwd",
+
+4.  kt.lookback = NULL,
+
+5.  nBoot = 250,
+
+6.  type = "residual",
+
+7.  deathType = "observed",
+
+8.  nSim = 250,
+
+9.  h = 50,
+
+10. jumpchoice = "actual",
+
+11. wxt = NULL,
+
+12. oxt = NULL,
+
+13. ages.fit = NULL,
+
+14. years.fit = NULL
+```
+
+# resultados
+
+```         
+1.  Tasas de mortalidad por edad y sexo
+
+3.  Gráficas de las tasas de mortalidad por edad y sexo
+
+    1.  Gráficas para edades importantes como 0, 1, 80, 85+
+
+    2.  Gap de mortalidad entre hombres y mujeres?
+
+4.  Tablas de vida por sexo
+
+    1.  Gráfica de E0 por sexo
+
+        1.  Notar que el intervalo superior de la esperanza de vida al nacer de las mujeres se excede bastante de lo esperado
+
+    2.  Gap del E0 entre sexo?
+
+    3.  Comparamos con la data del Censo, WPP. y GBD?
+```
+
+# Discusion
+
+```         
+1.  verificar que el modelo funciona con data default
+
+2.  verificar si el efecto persiste con otras metodologías mas simples (LC de StMoMo, LC de demography, BayesLife)
+
+    1.  ocurre con LC básico pero no con BayesLife
+
+        1.  Esto puede ser dado que BayesLife introduce información contextual adicional (Es mucho mas complejo que simplemente LC)
+
+3.  Verificar los parámetros
+
+    1.  Ninguno influye de manera que amortigua la data de la forma.
+
+4.  Comparar con la data del censo y wpp
+
+    1.  mediana esta entre medio del wpp y censo
+
+    2.  Intervalo masculino esta razonable
+
+    3.  intervalo superior femenino es el problema
+
+5.  Trabaja con la matriz de offset
+
+    1.  tiene efecto en el goodness of fit pero empeora el intervalo superior
+
+6.  Ajustando el scope de la data tiene efecto.
+
+    1.  Búsqueda intensiva por decada
+
+    2.  Búsqueda intensiva últimos 13 a\~os
+
+        1.  Ultima gráfica que vimos que aprox 80% de las combinaciones con menor intervalo superior eliminan los últimos 11 a\~os
+
+        2.  Eso es verdad para los hombres también
+
+        3.  el resto de los visuales presentan lo esperado
+```
+
+# Conclusión
+
+```         
+1.  Claramente ocurre algo con la data post 2011
+
+2.  La desviación no es simétrica como se esperaría
+
+3.  Los hay eventos conocidos en Puerto Rico (Maria, Covid) pero no parecen ser la fuente de la desviación.
+
+4.  La metodología del wpp produce un intervalo mas creíble pero también utiliza un contexto de información mucho mas grande.
+
+5.  Se tiene que rastrear el origen del problema
+
+6.  Dado a las proyecciones, la mortalidad de puerto rico seguirra mejorando igual como la esperanza de vida.
+
+    1.  Conclusión debería ser de la esperanza de vida y la mortalidad o el intervalo?
+```

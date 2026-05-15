@@ -288,11 +288,14 @@ plot_params <- function(ax_male, bx_male, kt_male,ax_female, bx_female, kt_femal
         labs(title="LC parameter bx", x="Age", y="Bx") +
         theme_bw()+
         scale_color_manual(values = c("female" = "red", "male" = "blue"))
+
+    rio::export(frame, "graphs/01_ax_bx.csv","csv")
+    
     kt_frame <- bind_rows(
         kt_male   |> as.data.frame() |> mutate(sex="male")   |> filter(sex=="male"),
         kt_female |> as.data.frame() |> mutate(sex="female") |> filter(sex=="female")
     )|> pivot_longer(names_to = "year", cols = -sex) |> rename(kt=value) |> mutate(year=as.numeric(year))
-    
+    rio::export(kt_frame, "graphs/01_kt.csv","csv")
     plt3<- ggplot(kt_frame, aes(x=year,y=kt,color=sex, group=sex)) +
         geom_line(aes(), size=1) +
         labs(title="LC parameter kt", x="Year", y="Kt") +
@@ -583,29 +586,83 @@ entities <- bind_rows(df2, entities)|>
 compare_plot <- ggplot() +
     geom_ribbon( data=entities |> filter(age==0) |> filter(source=="Our Projections"), aes(x = year, ymax=upper, ymin =lower,color=source, fill = "grey90"))   +
     geom_ribbon( data=entities |> filter(age==0) |> filter(source=="WPP"),             aes(x = year, ymax=upper, ymin =lower,color=source, fill = "grey90"))   +
-    geom_ribbon( data=entities |> filter(age==0) |> filter(source=="GBD"),             aes(x = year, ymax=upper, ymin =lower,color=source, fill = "grey90"))   +
     geom_line(   data=entities |> filter(age==0) |> filter(source=="Our Projections")|> filter(type!="historic"), aes(x = year, y = central,color=source))     +
-    geom_line(   data=entities |> filter(age==0) |> filter(source=="IDB"),                                        aes(x = year, y = central,color=source))     +
     geom_line(   data=entities |> filter(age==0) |> filter(source=="WPP"),                                        aes(x = year, y = central,color=source))     +
-    geom_line(   data=entities |> filter(age==0) |> filter(source=="GBD"),                                        aes(x = year, y = central,color=source))     +
     geom_point(  data=entities |> filter(year%%10==0) |> filter(age==0) |> filter(source=="Our Projections"),                            aes(x = year, y = central,shape=source))     +
-    geom_point(  data=entities |> filter(year%%10==0) |> filter(age==0) |> filter(source=="IDB"),                                        aes(x = year, y = central,shape=source))     +
     geom_point(  data=entities |> filter(year%%10==0) |> filter(age==0) |> filter(source=="WPP"),                                        aes(x = year, y = central,shape=source))     +
-    geom_point(  data=entities |> filter(year%%10==0) |> filter(age==0) |> filter(source=="GBD"),                                        aes(x = year, y = central,shape=source))     +
     facet_wrap(~sex) +
-    scale_color_manual(values = c("Our Projections" = "blue", "WPP" = "red", "IDB" = "green", "GBD" = "yellow", "historic" = "black"))+
+    scale_color_manual(values = c("Our Projections" = "blue", "WPP" = "red", "IDB" = "red", "GBD" = "red", "historic" = "black"))+
     scale_fill_manual( values = c("grey90" = "#aaaaaa66"))+
-    xlim(2020, 2070) +
+    xlim(2020, 2065) +
     theme_bw() +
     theme(legend.position = "bottom")+
     guides(
         fill  = "none",
         color = guide_legend(override.aes = list(fill = NA, linetype = 0, linewidth = 1)),
-        shape = guide_legend(override.aes = list(colour = c("yellow", "green", "blue", "red"), linewidth = 1))
+        shape = guide_legend(override.aes = list(colour = c("blue", "red"), linewidth = 1))
+    )+
+    labs(
+        title="Comparison of our projections with the WPP: 2023:2062",
+        x = "Year",
+        y = "Life Expectancy at Birth"
     )
-    
-ggsave("graphs/02_compare.png",plot = compare_plot, width=fig_width, height=fig_height)
+compare_plot
+ggsave("graphs/02_compare_wpp.png",plot = compare_plot, width=fig_width, height=fig_height)
+
+compare_plot <- ggplot() +
+    geom_ribbon( data=entities |> filter(age==0) |> filter(source=="Our Projections"), aes(x = year, ymax=upper, ymin =lower,color=source, fill = "grey90"))   +
+    geom_line(   data=entities |> filter(age==0) |> filter(source=="Our Projections")|> filter(type!="historic"), aes(x = year, y = central,color=source))     +
+    geom_line(   data=entities |> filter(age==0) |> filter(source=="IDB"),                                        aes(x = year, y = central,color=source))     +
+    geom_point(  data=entities |> filter(year%%10==0) |> filter(age==0) |> filter(source=="Our Projections"),                            aes(x = year, y = central,shape=source))     +
+    geom_point(  data=entities |> filter(year%%10==0) |> filter(age==0) |> filter(source=="IDB"),                                        aes(x = year, y = central,shape=source))     +
+    facet_wrap(~sex) +
+    scale_color_manual(values = c("Our Projections" = "blue", "WPP" = "red", "IDB" = "red", "GBD" = "red", "historic" = "black"))+
+    scale_fill_manual( values = c("grey90" = "#aaaaaa66"))+
+    xlim(2020, 2065) +
+    theme_bw() +
+    theme(legend.position = "bottom")+
+    guides(
+        fill  = "none",
+        color = guide_legend(override.aes = list(fill = NA, linetype = 0, linewidth = 1)),
+        shape = guide_legend(override.aes = list(colour = c("red", "blue"), linewidth = 1))
+    )+
+    labs(
+        title="Comparison of our projections with the IDB: 2023:2062",
+        x = "Year",
+        y = "Life Expectancy at Birth"
+    )
+compare_plot
+ggsave("graphs/02_compare_idb.png",plot = compare_plot, width=fig_width, height=fig_height)
+compare_plot <- ggplot() +
+    geom_ribbon( data=entities |> filter(age==0) |> filter(source=="Our Projections"), aes(x = year, ymax=upper, ymin =lower,color=source, fill = "grey90"))   +
+    geom_ribbon( data=entities |> filter(age==0) |> filter(source=="GBD"),             aes(x = year, ymax=upper, ymin =lower,color=source, fill = "grey90"))   +
+    geom_line(   data=entities |> filter(age==0) |> filter(source=="Our Projections")|> filter(type!="historic"), aes(x = year, y = central,color=source))     +
+    geom_line(   data=entities |> filter(age==0) |> filter(source=="GBD"),                                        aes(x = year, y = central,color=source))     +
+    geom_point(  data=entities |> filter(year%%10==0) |> filter(age==0) |> filter(source=="Our Projections"),                            aes(x = year, y = central,shape=source))     +
+    geom_point(  data=entities |> filter(year%%10==0) |> filter(age==0) |> filter(source=="GBD"),                                        aes(x = year, y = central,shape=source))     +
+    facet_wrap(~sex) +
+    scale_color_manual(values = c("Our Projections" = "blue", "WPP" = "red", "IDB" = "red", "GBD" = "red", "historic" = "black"))+
+    scale_fill_manual( values = c("grey90" = "#aaaaaa66"))+
+    xlim(2020, 2065) +
+    theme_bw() +
+    theme(legend.position = "bottom")+
+    guides(
+        fill  = "none",
+        color = guide_legend(override.aes = list(fill = NA, linetype = 0, linewidth = 1)),
+        shape = guide_legend(override.aes = list(colour = c("red", "blue"), linewidth = 1))
+    )+
+    labs(
+        title="Comparison of our projections with the GBD: 2023:2062",
+        x = "Year",
+        y = "Life Expectancy at Birth"
+    )
+compare_plot
+ggsave("graphs/02_compare_gbd.png",plot = compare_plot, width=fig_width, height=fig_height)
+
 rio::export(entities, "graphs/02_comparison_data.csv","csv")
+
+
+
 
 femproj <- entities |> filter(sex=="female") |> filter(age==0) |> filter(source=="Our Projections") |> filter(type!="historic") |> filter(is.na(central)==FALSE)
 femwpp  <- entities |> filter(sex=="female") |> filter(age==0) |> filter(source=="WPP") 
